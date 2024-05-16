@@ -6,8 +6,8 @@
  * External dependencies
  */
 import { useResizeObserver, pure, useRefEffect } from '@wordpress/compose';
-import { useContext, useMemo, useState } from '@wordpress/element';
-import { Disabled } from '@wordpress/components';
+import { useContext, useMemo, useRef, useState } from '@wordpress/element';
+import { Disabled, Popover } from '@wordpress/components';
 import {
 	__unstableEditorStyles as EditorStyles,
 	__unstableIframe as Iframe,
@@ -61,6 +61,10 @@ export type ScaledBlockPreviewProps = {
 	>;
 };
 
+export type VirtualElement = Pick< Element, 'getBoundingClientRect' > & {
+	ownerDocument?: Document;
+};
+
 function ScaledBlockPreview( {
 	viewportWidth,
 	containerWidth,
@@ -89,6 +93,30 @@ function ScaledBlockPreview( {
 	if ( ! viewportWidth ) {
 		viewportWidth = containerWidth;
 	}
+
+	const generateGetBoundingClientRect = ( x = 0, y = 0 ) => {
+		return () => ( {
+			width: 0,
+			height: 0,
+			top: y,
+			right: x,
+			bottom: y,
+			left: x,
+		} );
+	};
+
+	const [ rect, setRect ] = useState< DOMRect | null >( null );
+	const [ coordinate, setCoordinate ] = useState< {
+		x: number;
+		y: number;
+	} | null >( null );
+
+	const el = {
+		getBoundingClientRect: generateGetBoundingClientRect(),
+	};
+
+	const [ virtualElement, setVirtualElement ] =
+		useState< VirtualElement | null >( el );
 
 	// @ts-expect-error No types for this exist yet.
 	const { selectBlock, setBlockEditingMode } =
@@ -215,7 +243,7 @@ function ScaledBlockPreview( {
 		};
 
 		// Stop mousemove event listener to disable block tool insertion feature.
-		bodyElement.addEventListener( 'mousemove', onMouseMove, true );
+		// bodyElement.addEventListener( 'mousemove', onMouseMove, true );
 
 		if ( window.wcAdminFeatures[ 'pattern-toolkit-full-composability' ] ) {
 			bodyElement.addEventListener( 'click', ( event ) => {
@@ -227,13 +255,27 @@ function ScaledBlockPreview( {
 			} );
 
 			bodyElement.addEventListener(
-				'mouseover',
+				'mousemove',
 				( event ) => {
+					console.log( 'ci entro' );
 					selectBlockOnHover( event, {
 						selectBlockByClientId: selectBlock,
 						getBlockParents,
 						setBlockEditingMode: () => void 0,
 					} );
+
+					console.log( event.clientX, event.clientY );
+
+					const newElement = {
+						getBoundingClientRect: generateGetBoundingClientRect(
+							event.clientX,
+							event.clientY
+						),
+					};
+
+					console.log( 'newElement', newElement );
+
+					setVirtualElement( newElement );
 				},
 				true
 			);
@@ -258,76 +300,83 @@ function ScaledBlockPreview( {
 	};
 
 	return (
-		<DisabledProvider value={ true }>
-			<div
-				className="block-editor-block-preview__content"
-				style={
-					autoScale
-						? {
-								transform: `scale(${ scale })`,
-								// Using width + aspect-ratio instead of height here triggers browsers' native
-								// handling of scrollbar's visibility. It prevents the flickering issue seen
-								// in https://github.com/WordPress/gutenberg/issues/52027.
-								// See https://github.com/WordPress/gutenberg/pull/52921 for more info.
-								aspectRatio,
-								maxHeight:
-									contentHeight !== null &&
-									contentHeight > MAX_HEIGHT
-										? MAX_HEIGHT * scale
-										: undefined,
-						  }
-						: {}
-				}
-			>
-				<CustomIframeComponent
-					aria-hidden
-					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-					// @ts-ignore disabled prop exists
-					scrolling={ isScrollable ? 'yes' : 'no' }
-					tabIndex={ -1 }
-					readonly={ false }
+		<>
+			{ virtualElement && (
+				<Popover anchor={ virtualElement }>
+					You can edit your content later in the editor
+				</Popover>
+			) }
+			<DisabledProvider value={ true }>
+				<div
+					className="block-editor-block-preview__content"
 					style={
 						autoScale
 							? {
-									position: 'absolute',
-									width: viewportWidth,
-									height: contentHeight,
-									pointerEvents: 'none',
-									// This is a catch-all max-height for patterns.
-									// See: https://github.com/WordPress/gutenberg/pull/38175.
-									maxHeight: MAX_HEIGHT,
+									transform: `scale(${ scale })`,
+									// Using width + aspect-ratio instead of height here triggers browsers' native
+									// handling of scrollbar's visibility. It prevents the flickering issue seen
+									// in https://github.com/WordPress/gutenberg/issues/52027.
+									// See https://github.com/WordPress/gutenberg/pull/52921 for more info.
+									aspectRatio,
+									maxHeight:
+										contentHeight !== null &&
+										contentHeight > MAX_HEIGHT
+											? MAX_HEIGHT * scale
+											: undefined,
 							  }
 							: {}
 					}
-					contentRef={ useRefEffect(
-						( bodyElement: HTMLBodyElement ) => {
-							const {
-								ownerDocument: { documentElement },
-							} = bodyElement;
-
-							documentElement.classList.add(
-								'block-editor-block-preview__content-iframe'
-							);
-							documentElement.style.position = 'absolute';
-							documentElement.style.width = '100%';
-
-							// Necessary for contentResizeListener to work.
-							bodyElement.style.boxSizing = 'border-box';
-							bodyElement.style.position = 'absolute';
-							bodyElement.style.width = '100%';
-
-							const cleanup = updateIframeContent( bodyElement );
-							return () => {
-								cleanup();
-								setContentHeight( null );
-							};
-						},
-						[ isNavigable ]
-					) }
 				>
-					<EditorStyles styles={ editorStyles } />
-					<style>
-						{ `
+					<CustomIframeComponent
+						aria-hidden
+						// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+						// @ts-ignore disabled prop exists
+						scrolling={ isScrollable ? 'yes' : 'no' }
+						tabIndex={ -1 }
+						readonly={ false }
+						style={
+							autoScale
+								? {
+										position: 'absolute',
+										width: viewportWidth,
+										height: contentHeight,
+										pointerEvents: 'none',
+										// This is a catch-all max-height for patterns.
+										// See: https://github.com/WordPress/gutenberg/pull/38175.
+										maxHeight: MAX_HEIGHT,
+								  }
+								: {}
+						}
+						contentRef={ useRefEffect(
+							( bodyElement: HTMLBodyElement ) => {
+								const {
+									ownerDocument: { documentElement },
+								} = bodyElement;
+
+								documentElement.classList.add(
+									'block-editor-block-preview__content-iframe'
+								);
+								documentElement.style.position = 'absolute';
+								documentElement.style.width = '100%';
+
+								// Necessary for contentResizeListener to work.
+								bodyElement.style.boxSizing = 'border-box';
+								bodyElement.style.position = 'absolute';
+								bodyElement.style.width = '100%';
+
+								const cleanup =
+									updateIframeContent( bodyElement );
+								return () => {
+									cleanup();
+									setContentHeight( null );
+								};
+							},
+							[ isNavigable ]
+						) }
+					>
+						<EditorStyles styles={ editorStyles } />
+						<style>
+							{ `
 						.block-editor-block-list__block::before,
 						.has-child-selected > .is-selected::after,
 						.is-hovered:not(.is-selected.is-hovered)::after,
@@ -355,18 +404,19 @@ function ScaledBlockPreview( {
 
 						${ additionalStyles }
 					` }
-					</style>
-					<MemoizedBlockList renderAppender={ false } />
-					<PreloadFonts />
-					{ isAIFlow( context.flowType ) && (
-						<FontFamiliesLoaderDotCom
-							fontFamilies={ externalFontFamilies }
-							onLoad={ noop }
-						/>
-					) }
-				</CustomIframeComponent>
-			</div>
-		</DisabledProvider>
+						</style>
+						<MemoizedBlockList renderAppender={ false } />
+						<PreloadFonts />
+						{ isAIFlow( context.flowType ) && (
+							<FontFamiliesLoaderDotCom
+								fontFamilies={ externalFontFamilies }
+								onLoad={ noop }
+							/>
+						) }
+					</CustomIframeComponent>
+				</div>
+			</DisabledProvider>
+		</>
 	);
 }
 
