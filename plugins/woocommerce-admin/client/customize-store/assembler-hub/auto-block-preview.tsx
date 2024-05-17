@@ -132,7 +132,7 @@ function ScaledBlockPreview( {
 		let siteTitles: NodeListOf< HTMLAnchorElement >;
 
 		const onMouseMove = ( event: MouseEvent ) => {
-			event.stopImmediatePropagation();
+			// event.stopImmediatePropagation();
 		};
 
 		const onClickNavigation = ( event: MouseEvent ) => {
@@ -223,7 +223,7 @@ function ScaledBlockPreview( {
 		};
 
 		// Stop mousemove event listener to disable block tool insertion feature.
-		// bodyElement.addEventListener( 'mousemove', onMouseMove, true );
+		bodyElement.addEventListener( 'mousemove', onMouseMove, true );
 
 		if ( window.wcAdminFeatures[ 'pattern-toolkit-full-composability' ] ) {
 			bodyElement.addEventListener( 'click', ( event ) => {
@@ -232,6 +232,8 @@ function ScaledBlockPreview( {
 					getBlockParents,
 					setBlockEditingMode,
 				} );
+
+				console.log( 'clickedBlockClientId', clickedBlockClientId );
 
 				updatePopoverPosition( {
 					mainBodyWidth: window.document.body.clientWidth,
@@ -250,6 +252,11 @@ function ScaledBlockPreview( {
 						getBlockParents,
 						setBlockEditingMode: () => void 0,
 					} );
+
+					console.log(
+						'selectedBlockClientId',
+						selectedBlockClientId
+					);
 
 					if ( selectedBlockClientId ) {
 						updatePopoverPosition( {
@@ -286,6 +293,7 @@ function ScaledBlockPreview( {
 	return (
 		<>
 			{ virtualElement && popoverStatus === PopoverStatus.VISIBLE && (
+				// @ts-ignore No types for this exist yet.
 				<Popover anchor={ virtualElement }>
 					You can edit your content later in the editor
 				</Popover>
