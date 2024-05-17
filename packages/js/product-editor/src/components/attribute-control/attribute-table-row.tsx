@@ -177,11 +177,16 @@ export const AttributeTableRow: React.FC< AttributeTableRowProps > = ( {
 
 		// Create the new terms.
 		const promises = termNames.map( async ( termName ) => {
-			const newTerm = ( await createProductAttributeTerm( {
-				name: termName,
-				slug: cleanForSlug( termName ),
-				attribute_id: attributeId,
-			} ) ) as ProductAttributeTerm;
+			const newTerm = ( await createProductAttributeTerm(
+				{
+					name: termName,
+					slug: cleanForSlug( termName ),
+					attribute_id: attributeId,
+				},
+				{
+					optimisticUrlParameters: [ attributeId ],
+				}
+			) ) as ProductAttributeTerm;
 
 			return newTerm;
 		} );
