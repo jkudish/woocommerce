@@ -51,8 +51,9 @@ export const AttributeTableRow: React.FC< AttributeTableRowProps > = ( {
 } ) => {
 	const attributeId = attribute ? attribute.id : undefined;
 
-	const { createProductAttributeTerm, invalidateResolutionForStoreSelector } =
-		useDispatch( EXPERIMENTAL_PRODUCT_ATTRIBUTE_TERMS_STORE_NAME );
+	const { createProductAttributeTerm } = useDispatch(
+		EXPERIMENTAL_PRODUCT_ATTRIBUTE_TERMS_STORE_NAME
+	);
 
 	const { terms } = useSelect(
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -184,6 +185,10 @@ export const AttributeTableRow: React.FC< AttributeTableRowProps > = ( {
 					attribute_id: attributeId,
 				},
 				{
+					optimisticQueryUpdate: {
+						search: '',
+						attribute_id: attributeId,
+					},
 					optimisticUrlParameters: [ attributeId ],
 				}
 			) ) as ProductAttributeTerm;
@@ -192,15 +197,6 @@ export const AttributeTableRow: React.FC< AttributeTableRowProps > = ( {
 		} );
 
 		const newItems = await Promise.all( promises );
-
-		/*
-		 * Refresh attribute terms, invalidating the resolution
-		 * to include the newly created terms.
-		 * ToDo: Implement it optimally.
-		 */
-		invalidateResolutionForStoreSelector( 'getProductAttributeTerms', [
-			{ search: '', attribute_id: attributeId },
-		] );
 
 		onTermsSelect( [ ...selectedTerms, ...newItems ], index, attribute );
 	}
