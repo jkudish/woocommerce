@@ -268,7 +268,6 @@ function ScaledBlockPreview( {
 					} );
 
 					if ( selectedBlockClientId ) {
-						console.log( 'ci entro' );
 						updatePopoverPosition( {
 							mainBodyWidth: window.document.body.clientWidth,
 							iframeWidth: bodyElement.clientWidth,
@@ -312,7 +311,12 @@ function ScaledBlockPreview( {
 	return (
 		<>
 			{ virtualElement && popoverStatus === PopoverStatus.VISIBLE && (
-				<Popover anchor={ virtualElement }>
+				<Popover
+					anchor={ virtualElement }
+					as="div"
+					variant="unstyled"
+					className="components-tooltip woocommerce-customize-store_popover-tooltip"
+				>
 					You can edit your content later in the editor
 				</Popover>
 			) }

@@ -67,7 +67,7 @@ export const usePopoverHandler = () => {
 			const newElement = {
 				getBoundingClientRect: generateGetBoundingClientRect(
 					event.clientX + ( mainBodyWidth - iframeWidth ),
-					event.clientY
+					event.clientY + 40
 				),
 			} as VirtualElement;
 
@@ -83,9 +83,5 @@ export const usePopoverHandler = () => {
 		5
 	);
 
-	return [
-		popoverStatus,
-		virtualElement,
-		debounceUpdatePopoverPosition,
-	] as const;
+	return [ popoverStatus, virtualElement, updatePopoverPosition ] as const;
 };
