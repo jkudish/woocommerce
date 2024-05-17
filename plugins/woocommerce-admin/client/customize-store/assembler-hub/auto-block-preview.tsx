@@ -7,7 +7,7 @@
  */
 import { useResizeObserver, pure, useRefEffect } from '@wordpress/compose';
 import { useContext, useMemo, useState } from '@wordpress/element';
-import { Disabled, Popover } from '@wordpress/components';
+import { Disabled, Popover, Tooltip } from '@wordpress/components';
 import {
 	__unstableEditorStyles as EditorStyles,
 	__unstableIframe as Iframe,
@@ -18,7 +18,7 @@ import {
 } from '@wordpress/block-editor';
 // @ts-ignore No types for this exist yet.
 import { unlock } from '@wordpress/edit-site/build-module/lock-unlock';
-import { noop } from 'lodash';
+import { debounce, noop } from 'lodash';
 
 /**
  * Internal dependencies
@@ -203,6 +203,22 @@ function ScaledBlockPreview( {
 			setLogoBlockIds( logoBlockIds );
 		};
 
+		const addInertToAllChildrenBlocks = () => {
+			const parentBlocks = bodyElement.getElementsByClassName(
+				'block-editor-block-list__layout'
+			)[ 0 ].children;
+
+			for ( const parentBlock of parentBlocks ) {
+				parentBlock.setAttribute( 'data-is-parent-block', 'true' );
+			}
+
+			for ( const disableClick of bodyElement.querySelectorAll(
+				"[data-is-parent-block='true'] *, header *, footer *"
+			) ) {
+				disableClick.setAttribute( 'inert', 'true' );
+			}
+		};
+
 		const onChange = () => {
 			if ( autoScale ) {
 				const rootContainer =
@@ -233,8 +249,6 @@ function ScaledBlockPreview( {
 					setBlockEditingMode,
 				} );
 
-				console.log( 'clickedBlockClientId', clickedBlockClientId );
-
 				updatePopoverPosition( {
 					mainBodyWidth: window.document.body.clientWidth,
 					iframeWidth: bodyElement.clientWidth,
@@ -253,12 +267,8 @@ function ScaledBlockPreview( {
 						setBlockEditingMode: () => void 0,
 					} );
 
-					console.log(
-						'selectedBlockClientId',
-						selectedBlockClientId
-					);
-
 					if ( selectedBlockClientId ) {
+						console.log( 'ci entro' );
 						updatePopoverPosition( {
 							mainBodyWidth: window.document.body.clientWidth,
 							iframeWidth: bodyElement.clientWidth,
@@ -272,16 +282,25 @@ function ScaledBlockPreview( {
 			);
 		}
 
-		const observer = new window.MutationObserver( onChange );
-		observer.observe( bodyElement, {
+		const observerHight = new window.MutationObserver( onChange );
+		const observerChildList = new window.MutationObserver(
+			addInertToAllChildrenBlocks
+		);
+
+		observerHight.observe( bodyElement, {
 			attributes: true,
 			characterData: false,
 			subtree: true,
 			childList: true,
 		} );
 
+		observerChildList.observe( bodyElement, {
+			childList: true,
+		} );
+
 		return () => {
-			observer.disconnect();
+			observerHight.disconnect();
+			observerChildList.disconnect();
 			possiblyRemoveAllListeners();
 
 			if ( setLogoBlockContext ) {
@@ -293,7 +312,6 @@ function ScaledBlockPreview( {
 	return (
 		<>
 			{ virtualElement && popoverStatus === PopoverStatus.VISIBLE && (
-				// @ts-ignore No types for this exist yet.
 				<Popover anchor={ virtualElement }>
 					You can edit your content later in the editor
 				</Popover>
