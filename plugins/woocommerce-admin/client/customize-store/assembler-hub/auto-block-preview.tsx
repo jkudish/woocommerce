@@ -6,7 +6,7 @@
  * External dependencies
  */
 import { useResizeObserver, pure, useRefEffect } from '@wordpress/compose';
-import { useContext, useMemo, useRef, useState } from '@wordpress/element';
+import { useContext, useMemo, useState } from '@wordpress/element';
 import { Disabled, Popover } from '@wordpress/components';
 import {
 	__unstableEditorStyles as EditorStyles,
@@ -32,6 +32,7 @@ import { CustomizeStoreContext } from '.';
 import { isAIFlow } from '../guards';
 import { selectBlockOnHover } from './utils/select-block-on-hover';
 import { useDispatch, useSelect } from '@wordpress/data';
+import { PopoverStatus, usePopoverHandler } from './hooks/use-popover-handler';
 
 // @ts-ignore No types for this exist yet.
 const { Provider: DisabledProvider } = Disabled.Context;
@@ -94,29 +95,8 @@ function ScaledBlockPreview( {
 		viewportWidth = containerWidth;
 	}
 
-	const generateGetBoundingClientRect = ( x = 0, y = 0 ) => {
-		return () => ( {
-			width: 0,
-			height: 0,
-			top: y,
-			right: x,
-			bottom: y,
-			left: x,
-		} );
-	};
-
-	const [ rect, setRect ] = useState< DOMRect | null >( null );
-	const [ coordinate, setCoordinate ] = useState< {
-		x: number;
-		y: number;
-	} | null >( null );
-
-	const el = {
-		getBoundingClientRect: generateGetBoundingClientRect(),
-	};
-
-	const [ virtualElement, setVirtualElement ] =
-		useState< VirtualElement | null >( el );
+	const [ popoverStatus, virtualElement, updatePopoverPosition ] =
+		usePopoverHandler();
 
 	// @ts-expect-error No types for this exist yet.
 	const { selectBlock, setBlockEditingMode } =
@@ -247,35 +227,39 @@ function ScaledBlockPreview( {
 
 		if ( window.wcAdminFeatures[ 'pattern-toolkit-full-composability' ] ) {
 			bodyElement.addEventListener( 'click', ( event ) => {
-				selectBlockOnHover( event, {
+				const clickedBlockClientId = selectBlockOnHover( event, {
 					selectBlockByClientId: selectBlock,
 					getBlockParents,
 					setBlockEditingMode,
+				} );
+
+				updatePopoverPosition( {
+					mainBodyWidth: window.document.body.clientWidth,
+					iframeWidth: bodyElement.clientWidth,
+					event,
+					hoveredBlockClientId: null,
+					clickedBlockClientId: clickedBlockClientId as string,
 				} );
 			} );
 
 			bodyElement.addEventListener(
 				'mousemove',
 				( event ) => {
-					console.log( 'ci entro' );
-					selectBlockOnHover( event, {
+					const selectedBlockClientId = selectBlockOnHover( event, {
 						selectBlockByClientId: selectBlock,
 						getBlockParents,
 						setBlockEditingMode: () => void 0,
 					} );
 
-					console.log( event.clientX, event.clientY );
-
-					const newElement = {
-						getBoundingClientRect: generateGetBoundingClientRect(
-							event.clientX,
-							event.clientY
-						),
-					};
-
-					console.log( 'newElement', newElement );
-
-					setVirtualElement( newElement );
+					if ( selectedBlockClientId ) {
+						updatePopoverPosition( {
+							mainBodyWidth: window.document.body.clientWidth,
+							iframeWidth: bodyElement.clientWidth,
+							event,
+							hoveredBlockClientId: selectedBlockClientId,
+							clickedBlockClientId: null,
+						} );
+					}
 				},
 				true
 			);
@@ -301,7 +285,7 @@ function ScaledBlockPreview( {
 
 	return (
 		<>
-			{ virtualElement && (
+			{ virtualElement && popoverStatus === PopoverStatus.VISIBLE && (
 				<Popover anchor={ virtualElement }>
 					You can edit your content later in the editor
 				</Popover>

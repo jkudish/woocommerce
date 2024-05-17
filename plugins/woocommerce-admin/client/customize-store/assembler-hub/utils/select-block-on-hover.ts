@@ -46,10 +46,11 @@ export const selectBlockOnHover = (
 
 	if ( ! blockParents || blockParents.length === 0 ) {
 		selectBlockByClientId( blockClientId, null );
-	} else {
-		if ( setBlockEditingMode ) {
-			setBlockEditingMode( blockClientId, 'disabled' );
-		}
-		selectBlockByClientId( blockParents[ 0 ], null );
+		return blockClientId;
 	}
+	if ( setBlockEditingMode ) {
+		setBlockEditingMode( blockClientId, 'disabled' );
+	}
+	selectBlockByClientId( blockParents[ 0 ], null );
+	return blockClientId;
 };
