@@ -97,7 +97,7 @@
           "post_title": "Customizing checkout fields using actions and filters",
           "tags": "code-snippet",
           "edit_url": "https://github.com/woocommerce/woocommerce/edit/trunk/docs/code-snippets/customising-checkout-fields.md",
-          "hash": "3b0ce072c92206279fc6d49f3aa4cb0e4fbc2da71a2a5f0ffada81c030c397df",
+          "hash": "8bbfe162402e484ae89427e1aedaed4faa57555b64b5a77ca800f701524314cb",
           "url": "https://raw.githubusercontent.com/woocommerce/woocommerce/trunk/docs/code-snippets/customising-checkout-fields.md",
           "id": "83097d3b7414557fc80dcf9f8f1a708bbdcdd884"
         },
@@ -648,7 +648,7 @@
           "menu_title": "Payment Gateway API",
           "tags": "reference",
           "edit_url": "https://github.com/woocommerce/woocommerce/edit/trunk/docs/payments/payment-gateway-api.md",
-          "hash": "812b0beff6b99ca3ac54a896be7daf3c2baca79cc0ba6caa6010c5563c97bd8f",
+          "hash": "f199d04a262bac32d1e22eb3f8410d5c30f10fa86cbb303d4149363a44dc3562",
           "url": "https://raw.githubusercontent.com/woocommerce/woocommerce/trunk/docs/payments/payment-gateway-api.md",
           "id": "b337203996650b567f91c70306e1010d6f1ae552"
         }
@@ -1266,5 +1266,5 @@
       "categories": []
     }
   ],
-  "hash": "fe317e6e18998dd7e1936581791d6e949ff59137cd42d5004464093efbca1a88"
+  "hash": "ad81de26b3e4754972f93a97c681deed4ce10bb99d219de4d2c0e490b7c6e601"
 }
