@@ -33,6 +33,7 @@ import { isAIFlow } from '../guards';
 import { selectBlockOnHover } from './utils/select-block-on-hover';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { PopoverStatus, usePopoverHandler } from './hooks/use-popover-handler';
+import { isFullComposabilityFeatureAndAPIAvailable } from './utils/is-full-composability-enabled';
 
 // @ts-ignore No types for this exist yet.
 const { Provider: DisabledProvider } = Disabled.Context;
@@ -241,7 +242,7 @@ function ScaledBlockPreview( {
 		// Stop mousemove event listener to disable block tool insertion feature.
 		bodyElement.addEventListener( 'mousemove', onMouseMove, true );
 
-		if ( window.wcAdminFeatures[ 'pattern-toolkit-full-composability' ] ) {
+		if ( isFullComposabilityFeatureAndAPIAvailable() ) {
 			bodyElement.addEventListener( 'click', ( event ) => {
 				const clickedBlockClientId = selectBlockOnHover( event, {
 					selectBlockByClientId: selectBlock,
@@ -312,6 +313,7 @@ function ScaledBlockPreview( {
 		<>
 			{ virtualElement && popoverStatus === PopoverStatus.VISIBLE && (
 				<Popover
+					// @ts-ignore No types for this exist yet.
 					anchor={ virtualElement }
 					as="div"
 					variant="unstyled"
