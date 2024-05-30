@@ -181,12 +181,11 @@ class WC_Product_Data_Store_CPT extends WC_Data_Store_WP implements WC_Object_Da
 			/**
 			 * If SKU is already under processing aka Duplicate SKU
 			 * because of concurrent requests, then we should not proceed
-			 * Delete the product and throw an exception.
+			 * Delete the product and return
 			 */
 			if ( ! empty( $sku ) && ! $this->obtain_lock_on_sku_for_concurrent_requests( $product ) ) {
 				$product->delete( true );
-				// translators: 1: SKU, 2: Product Id.
-				throw new Exception( esc_html( sprintf( __( 'The SKU (%1$s) you are trying to insert with Product Id (%2$s) is already under processing', 'woocommerce' ), $sku, $id ) ) );
+				return;
 			}
 
 			$this->update_post_meta( $product, true );
@@ -1287,7 +1286,7 @@ class WC_Product_Data_Store_CPT extends WC_Data_Store_WP implements WC_Object_Da
 
 			do_action( 'product_variation_linked', $variation_id );
 
-			$count ++;
+			++$count;
 
 			if ( $limit > 0 && $count >= $limit ) {
 				break;

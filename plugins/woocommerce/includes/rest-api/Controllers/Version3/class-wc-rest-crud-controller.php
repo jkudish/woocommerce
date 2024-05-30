@@ -166,7 +166,16 @@ abstract class WC_REST_CRUD_Controller extends WC_REST_Posts_Controller {
 				return $object;
 			}
 
-			$object->save();
+			$product_id = $object->save();
+			$sku        = $object->get_sku();
+
+			/**
+			 * If the product id is not created due to duplicate SKU for concurrent requests,
+			 * return error message with the SKU which is already under processing.
+			 */
+			if ( $product_id === 0 ) {
+				return new WP_Error( "woocommerce_rest_{$this->post_type}_not_created", esc_html( sprintf( __( 'The SKU (%1$s) you are trying to insert is already under processing', 'woocommerce' ), $sku ) ), array( 'status' => 400 ) );
+			}
 
 			return $this->get_object( $object->get_id() );
 		} catch ( WC_Data_Exception $e ) {
@@ -188,11 +197,7 @@ abstract class WC_REST_CRUD_Controller extends WC_REST_Posts_Controller {
 			return new WP_Error( "woocommerce_rest_{$this->post_type}_exists", sprintf( __( 'Cannot create existing %s.', 'woocommerce' ), $this->post_type ), array( 'status' => 400 ) );
 		}
 
-		try {
-			$object = $this->save_object( $request, true );
-		} catch ( Exception $e ) {
-			return new WP_Error( "woocommerce_rest_{$this->post_type}_not_created", $e->getMessage(), array( 'status' => 400 ) );
-		}
+		$object = $this->save_object( $request, true );
 
 		if ( is_wp_error( $object ) ) {
 			return $object;
